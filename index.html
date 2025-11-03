@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Growth Dashboard</title>
+
+  <!-- Rounded Spotify-like font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js and plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <!-- Global Chart.js Font & Readability Tweaks -->
+  <script>
+    (function () {
+      if (!window.Chart) return;
+
+      // 🎨 Default font family and base size
+      Chart.defaults.font.family = "Montserrat, 'Segoe UI', Arial, sans-serif";
+      Chart.defaults.font.size = 20;
+      Chart.defaults.color = "#e8f5e9"; // soft green-white for contrast
+
+      // Legends
+      if (Chart.defaults.plugins?.legend) {
+        Chart.defaults.plugins.legend.labels.color = "#e8f5e9";
+        Chart.defaults.plugins.legend.labels.font = { size: 14, weight: "500" };
+      }
+
+      // Titles
+      if (Chart.defaults.plugins?.title) {
+        Chart.defaults.plugins.title.color = "#ffffff";
+        Chart.defaults.plugins.title.font = { size: 18, weight: "600" };
+      }
+
+      // Tooltips
+      if (Chart.defaults.plugins?.tooltip) {
+        Chart.defaults.plugins.tooltip.titleColor = "#fff";
+        Chart.defaults.plugins.tooltip.bodyColor = "#fff";
+        Chart.defaults.plugins.tooltip.backgroundColor = "rgba(0,0,0,0.8)";
+        Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: "600" };
+        Chart.defaults.plugins.tooltip.bodyFont = { size: 13 };
+      }
+
+      // Datalabels
+      if (Chart.defaults.plugins) {
+        Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
+        Chart.defaults.plugins.datalabels.color = "#ffffff";
+        Chart.defaults.plugins.datalabels.font = { size: 13, weight: "600" };
+      }
+
+      // Axes readability
+      if (Chart.defaults.scales) {
+        for (const axis of Object.keys(Chart.defaults.scales)) {
+          const ticks = Chart.defaults.scales[axis]?.ticks || {};
+          ticks.color = "#d2f0d6";
+          ticks.font = { size: 13, weight: "500" };
+        }
+      }
+    })();
+  </script>
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      color: #e8f5e9;
+      background-color: #0b0f0c;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    header {
+      background: #1db954;
+      padding: 1rem 0;
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(29, 185, 84, 0.6);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    section.charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      width: 90%;
+      max-width: 1200px;
+    }
+
+    canvas {
+      background: rgba(20, 30, 20, 0.8);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(29, 185, 84, 0.2);
+      padding: 0.5rem;
+    }
+
+    .insight {
+      background: rgba(20, 30, 20, 0.9);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(29, 185, 84, 0.25);
+      width: 80%;
+      max-width: 800px;
+    }
+
+    textarea {
+      width: 90%;
+      height: 80px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      background-color: #1c1f1d;
+      color: #e8f5e9;
+      outline: none;
+      resize: none;
+    }
+
+    button {
+      margin-top: 10px;
+      background-color: #1db954;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #1ed760;
+      box-shadow: 0 0 10px rgba(29, 185, 84, 0.4);
+    }
+
+    #response {
+      margin-top: 15px;
+      font-size: 15px;
+      color: #aaf1b0;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 🌿 Header -->
+  <header>
+    <h1>🎧 Spotify Audiobooks Growth Dashboard by Nicole.F (Prototype)</h1>
+  </header>
+
+  <!-- 🌱 Main Dashboard Content -->
+  <main>
+    <section class="charts reveal">
+      <canvas id="listeningChart"></canvas>
+      <canvas id="conversionChart"></canvas>
+      <canvas id="abChart"></canvas>
+      <canvas id="regionChart"></canvas>
+      <canvas id="growthChart"></canvas>
+    </section>
+
+    <!-- 🤖 AI Insight Section -->
+    <section class="insight reveal">
+      <h2>AI Insight</h2>
+      <textarea id="prompt" placeholder="Ask about campaign performance..."></textarea>
+      <button id="generate">Generate Insight</button>
+      <p id="response"></p>
+    </section>
+  </main>
+
+  <!-- Diagnostics: check canvases & surface errors before chart init -->
+  <script>
+    (function () {
+      // list of expected canvas IDs (keep in sync with your HTML)
+      const expected = ['listeningChart','conversionChart','abChart','regionChart','growthChart'];
+
+      // ensure DOM ready (canvas elements are in the body above this script)
+      const missing = expected.filter(id => !document.getElementById(id));
+      if (missing.length) {
+        console.warn('Missing canvas elements:', missing);
+        const resp = document.getElementById('response');
+        if (resp) resp.textContent = 'Missing canvas elements: ' + missing.join(', ');
+      }
+
+      // enforce visible/min-height so Chart.js has space to draw
+      expected.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        // ensure display block
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none') el.style.display = 'block';
+        // ensure a minimum visible height
+        if ((!el.style.height || el.style.height === '0px') && el.clientHeight < 200) {
+          el.style.minHeight = '360px';
+          el.style.height = '360px';
+        }
+      });
+
+      // global error handler to catch chart initialization/runtime errors
+      window.addEventListener('error', function (e) {
+        console.error('Runtime error caught:', e.message, e.error);
+        const resp = document.getElementById('response');
+        if (resp) resp.textContent = 'Error: ' + (e.message || 'see console');
+      });
+
+      // catch Promise rejections (useful if Chart.js or your script uses async)
+      window.addEventListener('unhandledrejection', function (evt) {
+        console.error('Unhandled rejection:', evt.reason);
+        const resp = document.getElementById('response');
+        if (resp) resp.textContent = 'Async error: ' + (evt.reason?.message || evt.reason || 'see console');
+      });
+    })();
+  </script>
+
+  <!-- 🎬 Your chart script (unchanged) -->
+  <script src="script.js"></script>
+</body>
+</html>
